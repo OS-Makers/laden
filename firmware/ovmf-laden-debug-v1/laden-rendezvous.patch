@@ -1,0 +1,39 @@
+diff --git a/MdeModulePkg/Core/Dxe/Image/Image.c b/MdeModulePkg/Core/Dxe/Image/Image.c
+index 71d267b..030045a 100644
+--- a/MdeModulePkg/Core/Dxe/Image/Image.c
++++ b/MdeModulePkg/Core/Dxe/Image/Image.c
+@@ -1,3 +1,4 @@
++#include <IndustryStandard/PeImage.h>
+ /** @file
+   Core image handling services to load and unload PeImage.
+ 
+@@ -1696,6 +1697,29 @@ CoreStartImage (
+     // Call the image's entry point
+     //
+     Image->Started = TRUE;
++
++    // LADEN_DEBUG_RENDEZVOUS: debug firmware only.
++    // The host debugger releases the volatile stack gate before application entry.
++    if (Image->ImageContext.ImageType == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
++      EFI_IMAGE_DOS_HEADER  *LadenDos;
++      EFI_IMAGE_NT_HEADERS64 *LadenNt;
++      volatile UINT32       LadenGate;
++
++      LadenDos = (EFI_IMAGE_DOS_HEADER *)Image->Info.ImageBase;
++      LadenNt  = (EFI_IMAGE_NT_HEADERS64 *)((UINT8 *)LadenDos + LadenDos->e_lfanew);
++      if ((LadenDos->e_magic == EFI_IMAGE_DOS_SIGNATURE) &&
++          (LadenNt->Signature == EFI_IMAGE_NT_SIGNATURE) &&
++          (LadenNt->FileHeader.TimeDateStamp == 0x4C414445)) {
++        LadenGate = 1;
++        DEBUG ((DEBUG_ERROR,
++          "LADEN_DEBUG BASE=%p ENTRY=%p GATE=%p\n",
++          Image->Info.ImageBase, (VOID *)(UINTN)Image->EntryPoint,
++          (VOID *)(UINTN)&LadenGate));
++        while (LadenGate != 0) {
++          CpuPause ();
++        }
++      }
++    }
+     Image->Status  = Image->EntryPoint (ImageHandle, Image->Info.SystemTable);
+ 
+     //
