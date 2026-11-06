@@ -8,6 +8,8 @@ name = "boot"
 path = "tests/boot.rs"
 harness = false
 
+[profile.dev.package.compiler_builtins]
+opt-level = "s"
 
 [dependencies]
 uefi = { version = "0.41.0", features = ["panic_handler"] }

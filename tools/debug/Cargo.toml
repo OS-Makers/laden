@@ -1,0 +1,8 @@
+[package]
+name = "laden-debug-command"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# This is an independent host tool, also when laden becomes a workspace.
+[workspace]
